@@ -4,6 +4,34 @@
 
 This project is an e-commerce application built using Laravel framework. It provides a platform for users to browse and purchase products online. The application includes features such as user authentication, product listing, shopping cart functionality, and order management and more.
 
+## Technology Used
+
+This project utilizes the following technologies:
+
+-   Laravel framework
+-   PHP
+-   MySQL database
+
+## Design Patterns
+
+The project follows the following design patterns:
+
+-   Model-View-Controller (MVC) pattern for organizing code and separating concerns
+-   Repository pattern for abstracting data access and providing a consistent interface
+-   Service pattern for encapsulating business logic and promoting reusability
+
+## Tricks and Tips
+
+Here are some tricks and tips for working with this project:
+
+-   Utilize Laravel's built-in authentication system for user management
+-   Leverage Laravel's Eloquent ORM for database interactions
+-   Take advantage of Laravel's routing system to define API endpoints
+-   Use Laravel's migration feature to manage database schema changes
+-   Implement form validation using Laravel's validation rules
+-   Make use of Laravel's artisan command-line tool for various tasks
+-   Follow Laravel's naming conventions and best practices for better code organization and maintainability
+
 ## Installation
 
 1. Clone the repository: `git clone https://github.com/MostafaEbrahim212/e-commerce-api.git`
