@@ -1,4 +1,4 @@
-# Project Name: E-Commerce
+# E-Commerce
 
 ## Description
 
@@ -22,17 +22,3 @@ This project is an e-commerce application built using Laravel framework. It prov
 3. Browse the available products and add them to your cart
 4. Proceed to checkout and complete the order
 5. Manage orders and products through the admin panel
-
-## Contributing
-
-Contributions are welcome! If you would like to contribute to this project, please follow these steps:
-
-1. Fork the repository
-2. Create a new branch: `git checkout -b feature/your-feature-name`
-3. Make your changes and commit them: `git commit -m 'Add your commit message here'`
-4. Push to the branch: `git push origin feature/your-feature-name`
-5. Submit a pull request
-
-## License
-
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
