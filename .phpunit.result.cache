@@ -1,0 +1,1 @@
+{"version":1,"defects":{"Tests\\Unit\\UploadsImageTest::it_uploads_image_and_returns_path":8},"times":{"Tests\\Unit\\UploadsImageTest::it_uploads_image_and_returns_path":0.156,"Tests\\Unit\\UploadsImageTest::it_returns_validation_error_when_no_image_provided":0.009}}
