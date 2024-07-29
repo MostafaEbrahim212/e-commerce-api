@@ -33,8 +33,8 @@ This project is an e-commerce application built using Laravel framework. It prov
 
 ### Admin Endpoints
 
--   `POST /api/admin/login` - Log in with existing user credentials
--   `POST /api/admin/logout` - Log out the currently authenticated user
+-   `POST /api/admin/login` - Log in with existing admin credentials
+-   `POST /api/admin/logout` - Log out the currently authenticated admin
 
 -   `GET /api/admin/users` - Get all users (admin only)
 -   `GET /api/admin/users/{id}` - Get a specific user by ID (admin only)
