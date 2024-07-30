@@ -57,12 +57,26 @@ class UserAuthController extends Controller
             }
             $user = User::where('email', $request->email)->first();
             if (!$this->authRepo->validateCredentials($user, $request->password)) {
-                return ApiResponseHelper::resData(null, 'Invalid Credentials', 401);
+                return ApiResponseHelper::resError(null, 'Invalid Credentials', 401);
+            }
+            if (!$user->status) {
+                return ApiResponseHelper::resError(null, 'User is Blocked', 403);
             }
             $token = $this->authRepo->generateToken($user);
             return ApiResponseHelper::resData(['token' => $token], 'User Login Successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponseHelper::resData(null, $e->getMessage(), 500);
+            return ApiResponseHelper::resError(null, $e->getMessage(), 500);
+        }
+    }
+
+    //Will be changed Later
+    public function user()
+    {
+        try {
+            $user = Auth::user();
+            return ApiResponseHelper::resData($user, 'User Info Fetched Successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponseHelper::resData(null, $e->getMessage());
         }
     }
 

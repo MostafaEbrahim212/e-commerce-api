@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 8, 2);
             $table->string('method');
-            $table->string('status');
+            $table->string('status')->default('pending');
             $table->string('transaction_id')->nullable();
             $table->json('payment_details')->nullable();
             $table->timestamps();

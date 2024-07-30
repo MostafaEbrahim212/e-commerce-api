@@ -7,19 +7,27 @@ class ApiResponseHelper
     {
         $statusType = self::getStatusType($status);
 
-        // Check if the data contains errors
-        $errors = isset($data['errors']) ? $data['errors'] : null;
-        $result = isset($data['result']) ? $data['result'] : $data;
 
         // Prepare the response
         $response = [
             'status_code' => $status,
             'status_type' => $statusType,
             'message' => $message,
-            'errors' => $errors ? $errors : null,
-            'result' => $errors ? null : $result,
+            'data' => $data,
         ];
 
+
+        return response()->json($response, $status);
+    }
+    public static function resError($errors = null, $message = '', $status = 500)
+    {
+        $statusType = self::getStatusType($status);
+        $response = [
+            'status_code' => $status,
+            'status_type' => $statusType,
+            'message' => $message,
+            'errors' => $errors,
+        ];
 
         return response()->json($response, $status);
     }

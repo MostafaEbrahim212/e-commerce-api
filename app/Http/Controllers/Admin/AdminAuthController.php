@@ -33,16 +33,16 @@ class AdminAuthController extends Controller
                 'password' => 'required'
             ]);
             if (!$validationResult['success']) {
-                return ApiResponseHelper::resData($validationResult['errors'], 'Validation Error', 422);
+                return ApiResponseHelper::resError($validationResult['errors'], 'Validation Error', 422);
             }
             $admin = $this->authRepo->findByEmail($request->email);
             if (!$this->authRepo->validateCredentials($admin, $request->password)) {
-                return ApiResponseHelper::resData(null, 'Invalid Credentials', 401);
+                return ApiResponseHelper::resError(null, 'Invalid Credentials', 401);
             }
             $token = $admin->createToken('adminToken')->plainTextToken;
             return ApiResponseHelper::resData(['token' => $token], 'Admin Login Successfully', 200);
         } catch (Exception $e) {
-            return ApiResponseHelper::resData(null, $e->getMessage(), 500);
+            return ApiResponseHelper::resError(null, $e->getMessage(), 500);
         }
     }
 
@@ -52,7 +52,7 @@ class AdminAuthController extends Controller
             $this->authRepo->logout($request->user());
             return ApiResponseHelper::resData(null, 'Logout Successfully', 200);
         } catch (Exception $e) {
-            return ApiResponseHelper::resData(null, $e->getMessage());
+            return ApiResponseHelper::resError(null, $e->getMessage());
         }
     }
 }

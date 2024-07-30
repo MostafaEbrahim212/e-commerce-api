@@ -23,7 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'status'
+        'status',
     ];
 
     /**
@@ -34,6 +34,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'email_verified_at',
     ];
 
     /**
@@ -44,6 +45,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+
+
 
     public function profile()
     {
@@ -58,19 +62,18 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
-
-
     public function scopeSearch($query, $searchValue)
     {
-        return $query->join('profiles', 'users.id', '=', 'profiles.user_id')
+        return $query->leftJoin('profiles', 'users.id', '=', 'profiles.user_id')
             ->when($searchValue, function ($query) use ($searchValue) {
                 $search = '%' . $searchValue . '%';
                 $query->where(function ($subQuery) use ($search) {
                     $subQuery->where('users.name', 'like', $search)
                         ->orWhere('users.email', 'like', $search)
-                        ->orWhere('profiles.phone_number', 'like', $search);
+                        ->orWhere('profiles.phone_number', 'like', $search)
+                        ->orWhere('users.id', 'like', $search);
                 });
             })
-            ->select('users.id', 'users.name', 'users.email', 'profiles.phone_number');
+            ->select('users.*');
     }
 }

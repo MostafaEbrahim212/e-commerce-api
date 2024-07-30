@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Repositories\Interfaces\CrudRepositoryInterface;
 use App\Traits\UploadsImages;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Response;
@@ -51,15 +52,16 @@ class ProductController extends Controller
 
             // Execute the query with pagination if requested
             $products = $query->paginate(10);
+            $message = $products->isEmpty() ? 'No products found' : 'Products fetched successfully';
             return ApiResponseHelper::resData([
                 'total' => $products->count(),
                 'products' => ProductResource::collection($products),
                 'current_page' => $products->currentPage(),
                 'last_page' => $products->lastPage(),
                 'per_page' => $products->perPage(),
-            ], 'Products fetched successfully', 200);
+            ], $message, 200);
         } catch (Exception $e) {
-            return ApiResponseHelper::resData(['errors' => $e->getMessage()], 'An error occurred', 500);
+            return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
         }
 
     }
@@ -77,7 +79,7 @@ class ProductController extends Controller
                 'category_id' => 'required|exists:categories,id',
             ]);
             if (!$validationResult['success']) {
-                return ApiResponseHelper::resData($validationResult['errors'], 'Validation errors', 422);
+                return ApiResponseHelper::resError($validationResult['errors'], 'Validation errors', 422);
             }
             if ($request->hasFile('image')) {
                 $image = $this->uploadImage($request->file('image'), 'products');
@@ -93,7 +95,7 @@ class ProductController extends Controller
             $product = new ProductResource($product);
             return ApiResponseHelper::resData(['product' => $product], 'Product created successfully', 201);
         } catch (Exception $e) {
-            return ApiResponseHelper::resData(['errors' => $e->getMessage()], 'An error occurred', 500);
+            return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
         }
     }
 
@@ -102,14 +104,14 @@ class ProductController extends Controller
     {
         try {
             $product = $this->productRepository->find($id);
-            $product = new ProductResource($product);
-            $notFound = NotFoundHelper::checkNotFound($product, 'Product not found', );
+            $notFound = NotFoundHelper::checkNotFound($product, 'Product not found');
             if ($notFound) {
                 return $notFound;
             }
+            $product = new ProductResource($product);
             return ApiResponseHelper::resData(['product' => $product], 'Product fetched successfully', 200);
         } catch (Exception $e) {
-            return ApiResponseHelper::resData(['errors' => $e->getMessage()], 'An error occurred', 500);
+            return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
         }
     }
 
@@ -117,7 +119,7 @@ class ProductController extends Controller
     public function update(Request $request, string $id)
     {
         try {
-            $product = Product::find($id);
+            $product = $this->productRepository->find($id);
             if (!$product) {
                 return ApiResponseHelper::resData(null, 'Product not found', 404);
             }
@@ -129,26 +131,23 @@ class ProductController extends Controller
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'category_id' => 'required|exists:categories,id',
             ]);
-
             if (!$validationResult['success']) {
-                return ApiResponseHelper::resData($validationResult['errors'], 'Validation errors', 422);
+                return ApiResponseHelper::resError($validationResult['errors'], 'Validation errors', 422);
             }
-
             if ($request->hasFile('image')) {
                 $image = $this->uploadImage($request->file('image'), 'products', $product->image);
             }
-
             $product = $this->productRepository->update($id, [
                 'name' => $request->name,
                 'description' => $request->description,
                 'price' => $request->price,
                 'stock' => $request->stock,
-                'image' => $image,
+                'image' => $image ?? $product->image ?? null,
                 'category_id' => $request->category_id,
             ]);
             return ApiResponseHelper::resData(['product' => $product], 'Product updated successfully', 200);
         } catch (Exception $e) {
-            return ApiResponseHelper::resData(['errors' => $e->getMessage()], 'An error occurred', 500);
+            return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
         }
     }
 
@@ -162,20 +161,22 @@ class ProductController extends Controller
             ]);
         }
 
-        return response()->json(['error' => 'Image not found'], 404);
+        return ApiResponseHelper::resError(null, 'Image not found', 404);
     }
 
 
     public function destroy(string $id)
     {
         try {
-            $product = $this->productRepository->delete($id);
-            if (!$product) {
-                return ApiResponseHelper::resData(null, 'Product not found', 404);
+            $product = $this->productRepository->find($id);
+            $notFound = NotFoundHelper::checkNotFound($product, 'Product not found');
+            if ($notFound) {
+                return $notFound;
             }
+            $product = $this->productRepository->delete($id);
             return ApiResponseHelper::resData(null, 'Product deleted successfully', 200);
         } catch (Exception $e) {
-            return ApiResponseHelper::resData(['errors' => $e->getMessage()], 'An error occurred', 500);
+            return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
         }
     }
 }
