@@ -14,6 +14,8 @@ Route::middleware('auth:admin-api')->prefix('admin')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout']);
 
     Route::apiResource('categories', CategoryController::class);
+    Route::get('categories-valid-property-filter', [CategoryController::class, 'getValidFilterProperty']);
+
     Route::apiResource('products', ProductController::class);
     Route::get('/categories/{category}/products', [CategoryController::class, 'categorProducts']);
 

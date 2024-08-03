@@ -1,153 +1,113 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Helpers\ApiResponseHelper;
 use App\Helpers\NotFoundHelper;
-use App\Helpers\SlugHelper;
-use App\Helpers\ValidationHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SearchRequest;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductResource;
-use App\Models\Category;
-use App\Repositories\Interfaces\CrudRepositoryInterface;
-use App\Traits\UploadsImages;
-use Exception;
+use App\Services\CategoryService;
 use Illuminate\Http\Request;
 use Response;
+use Exception;
 use Storage;
 
 class CategoryController extends Controller
 {
+    protected $categoryService;
 
-    use UploadsImages;
-
-    private $categoryRepository;
-    public function __construct(CrudRepositoryInterface $categoryRepository)
+    public function __construct(CategoryService $categoryService)
     {
-        $this->categoryRepository = $categoryRepository;
+        $this->categoryService = $categoryService;
     }
-
-
 
     public function index(SearchRequest $request)
     {
         try {
-            $query = $this->categoryRepository->getAllQuery();
-
-            if ($request->has('name')) {
-                $query = $this->categoryRepository->search($query, $request->name);
-            }
-
-            $sort_by = $request->get('sort_by', 'created_at');
-            $order = $request->get('order', 'asc');
-            $query = $this->categoryRepository->sort_by($query, $sort_by, $order);
-
-            if ($request->has('filter')) {
-                $query = $this->categoryRepository->filter($query, $request->filter, $request->value);
-            }
-
-            if ($request->has('status')) {
-                $query = $this->categoryRepository->status($query, $request->status);
-            }
-            $categories = $query->paginate(10);
+            $categories = $this->categoryService->getCategories($request);
             $message = $categories->isEmpty() ? 'No categories found' : 'Categories fetched successfully';
+
             return ApiResponseHelper::resData([
                 'total_in_page' => $categories->count(),
-                'categories' => $categories,
+                'total' => $categories->total(),
+                'categories' => CategoryResource::collection($categories),
+                'current_page' => $categories->currentPage(),
+                'per_page' => $categories->perPage(),
+                'last_page' => $categories->lastPage(),
+                'from' => $categories->firstItem(),
+                'to' => $categories->lastItem(),
+                'has_next_page' => $categories->hasMorePages(),
+                'has_previous_page' => $categories->previousPageUrl() !== null,
             ], $message, 200);
         } catch (Exception $e) {
-            return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
+            return ApiResponseHelper::resError(['errors' => 'An error occurred while fetching categories.'], $e->getMessage(), 500);
         }
-
     }
 
     public function categorProducts(string $id)
     {
         try {
-            $query = $this->categoryRepository->CategoryProducts($id);
-            $products = $query->paginate(10);
+            $products = $this->categoryService->getCategoryProducts($id);
             $message = $products->isEmpty() ? 'No products found' : 'Products fetched successfully';
             return ApiResponseHelper::resData([
-                'total' => $products->count(),
-                'products' => $products,
+                'total_in_page' => $products->count(),
+                'total' => $products->total(),
+                'products' => ProductResource::collection($products->items()),
+                'current_page' => $products->currentPage(),
+                'per_page' => $products->perPage(),
+                'last_page' => $products->lastPage(),
+                'from' => $products->firstItem(),
+                'to' => $products->lastItem(),
+                'has_next_page' => $products->hasMorePages(),
+                'has_previous_page' => $products->previousPageUrl() !== null,
             ], $message, 200);
         } catch (Exception $e) {
             return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
         }
     }
+
     public function store(Request $request)
     {
         try {
-
-            $validationResult = ValidationHelper::validateLoginRequest($request, [
-                'name' => 'required|string',
-                'description' => 'required|string',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            ]);
-            if (!$validationResult['success']) {
-                return ApiResponseHelper::resError($validationResult['errors'], 'Validation errors', 422);
-            }
-            $slug = SlugHelper::generateUniqueSlug($request->name, Category::class);
-            if ($request->hasFile('image')) {
-                $image = $this->uploadImage($request->file('image'), 'categories');
-            }
-            $category = $this->categoryRepository->create([
-                'name' => $request->name,
-                'description' => $request->description,
-                'image' => $image,
-                'slug' => $slug,
-            ]);
-            return ApiResponseHelper::resData(['category' => $category], 'Category created successfully', 201);
+            $category = $this->categoryService->storeCategory($request);
+            return ApiResponseHelper::resData(
+                ['category' => new CategoryResource($category)],
+                'Category created successfully',
+                201
+            );
         } catch (Exception $e) {
             return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
         }
     }
-
 
     public function show(string $id)
     {
         try {
-            $category = $this->categoryRepository->find($id);
-            $notFound = NotFoundHelper::checkNotFound($category, 'Category not found', );
+            $category = $this->categoryService->getCategory($id);
+            $notFound = NotFoundHelper::checkNotFound($category, 'Category not found');
             if ($notFound) {
                 return $notFound;
             }
-            $category = new CategoryResource($category);
-            return ApiResponseHelper::resData(['category' => $category], 'Category fetched successfully', 200);
+            return ApiResponseHelper::resData(
+                ['category' => new CategoryResource($category)],
+                'Category fetched successfully',
+                200
+            );
         } catch (Exception $e) {
             return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
         }
     }
 
-
     public function update(Request $request, string $id)
     {
         try {
-            $category = Category::find($id);
-            if (!$category) {
-                return ApiResponseHelper::resError(null, 'Category not found', 404);
-            }
-            $validationResult = ValidationHelper::validateLoginRequest($request, [
-                'name' => 'required|string',
-                'description' => 'required|string',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            ]);
-            if (!$validationResult['success']) {
-                return ApiResponseHelper::resError($validationResult['errors'], 'Validation errors', 422);
-            }
-            $slug = SlugHelper::generateUniqueSlug($request->name, Category::class);
-            if ($request->hasFile('image')) {
-                $image = $this->uploadImage($request->file('image'), 'categories', $category->image);
-            }
-            $category = $this->categoryRepository->update($id, [
-                'name' => $request->name,
-                'description' => $request->description,
-                'image' => $image ?? $category->image ?? null,
-                'slug' => $slug,
-            ]);
-            return ApiResponseHelper::resData(['category' => $category], 'Category updated successfully', 200);
+            $category = $this->categoryService->updateCategory($request, $id);
+            return ApiResponseHelper::resData(
+                ['category' => new CategoryResource($category)],
+                'Category updated successfully',
+                200
+            );
         } catch (Exception $e) {
             return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);
         }
@@ -155,23 +115,20 @@ class CategoryController extends Controller
 
     public function image($image)
     {
-        $filePath = 'images/categories/' . $image;
-        if (Storage::disk('public')->exists($filePath)) {
-            return Response::make(Storage::disk('public')->get($filePath), 200, [
-                'Content-Type' => Storage::disk('public')->mimeType($filePath)
+        $fileContent = $this->categoryService->getImage($image);
+        if ($fileContent) {
+            return Response::make($fileContent, 200, [
+                'Content-Type' => Storage::disk('public')->mimeType('images/categories/' . $image)
             ]);
         }
 
         return ApiResponseHelper::resError(null, 'Image not found', 404);
     }
+
     public function destroy(string $id)
     {
         try {
-            $category = $this->categoryRepository->delete($id);
-            $notFound = NotFoundHelper::checkNotFound($category, 'Product not found');
-            if ($notFound) {
-                return $notFound;
-            }
+            $this->categoryService->deleteCategory($id);
             return ApiResponseHelper::resData(null, 'Category deleted successfully', 200);
         } catch (Exception $e) {
             return ApiResponseHelper::resError(['errors' => $e->getMessage()], 'An error occurred', 500);

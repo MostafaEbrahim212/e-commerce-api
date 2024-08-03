@@ -23,11 +23,14 @@ class SearchRequest extends FormRequest
     {
         return [
             'name' => 'nullable|string',
-            'sort_by' => 'nullable|string|in:name,created_at,updated_at',
-            'order' => 'nullable|string|in:asc,desc',
-            'filter' => 'nullable|string',
-            'value' => 'nullable|string',
-            'page' => 'nullable|integer|min:1',
+            'sort' => 'nullable|string|in:asc,desc',
+            'limit' => 'nullable|integer',
+            'page' => 'nullable|integer',
+            'filter' => 'nullable|array',
+            'filter.*.property' => 'required_with:filter|string',
+            'filter.*.operation' => 'required_with:filter|string',
+            'filter.*.value' => 'required_with:filter',
         ];
     }
+
 }

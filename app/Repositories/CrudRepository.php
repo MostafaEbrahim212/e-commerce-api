@@ -22,7 +22,7 @@ class CrudRepository implements CrudRepositoryInterface
         return $query->where('name', 'like', '%' . $value . '%');
     }
 
-    public function sort_by($query, $column = 'created_at', $order = 'asc')
+    public function sort($query, $column = 'created_at', $order = 'asc')
     {
         return $query->orderBy($column, $order);
     }
@@ -32,10 +32,6 @@ class CrudRepository implements CrudRepositoryInterface
         return $query->where($column, $value);
     }
 
-    public function status($query, $status)
-    {
-        return $query->where('status', $status);
-    }
     public function find($id)
     {
         return $this->model::find($id);

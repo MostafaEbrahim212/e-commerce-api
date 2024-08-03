@@ -79,7 +79,7 @@ class OrdersController extends Controller
     {
         try {
             $order = Order::findOrFail($id);
-            $order->status = 'rejected';  // Adjust status as needed
+            $order->status = 'rejected';
             $order->save();
 
             return ApiResponseHelper::resData(new OrderResource($order), 'Order rejected successfully');
